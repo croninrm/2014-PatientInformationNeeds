@@ -45,11 +45,10 @@ tdm = textmining.TermDocumentMatrix()
 with open('LABELED_2008_175.csv', 'rb') as csvfile:
     spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
     for row in spamreader:
-        documents.append(row[2])
-        outcomes.append(row[3:8])
+        documents.append(row[3])
+        outcomes.append(row[4:10])
         # Add the documents
-        tdm.add_doc(row[2])
-
+        tdm.add_doc(row[3])
 
 # Write out the matrix to a csv file. Note that setting cutoff=1 means
 # that words which appear in 1 or more documents will be included in
@@ -80,13 +79,19 @@ dictionary.save('robCSVDictionary.dict') # store the dictionary, for future refe
 corpus = [dictionary.doc2bow(text) for text in texts]
 corpora.MmCorpus.serialize('robCSVcorpus.mm', corpus) # store to disk, for later use
 
-firstoutcomes=[int(row[0]) for row in outcomes[1:]]
-print firstoutcomes
+problemOutcomes=[int(row[0]) for row in outcomes[1:]]
+managementOutcomes=[int(row[1]) for row in outcomes[1:]]
+interventionsOutcomes=[int(row[2]) for row in outcomes[1:]]
+testsOutcomes=[int(row[3]) for row in outcomes[1:]]
+logisticsOutcomes=[int(row[4]) for row in outcomes[1:]]
+ackthxOutcomes=[int(row[5]) for row in outcomes[1:]]
+
+#print problemOutcomes
 firsttexts=[row for row in textsall[1:]]
 
 all_auc = []
-print 'Positive Class:', sum(firstoutcomes)
-cv = StratifiedKFold(firstoutcomes, n_folds=5, shuffle=True)
+print 'Positive Class:', sum(problemOutcomes)
+cv = StratifiedKFold(problemOutcomes, n_folds=5, shuffle=True)
 
 
 
@@ -96,14 +101,14 @@ cv = StratifiedKFold(firstoutcomes, n_folds=5, shuffle=True)
 
 print '[+] Got CV...'
 for i, (train, test) in enumerate(cv):
-    print "train = "
+#    print "train = "
     trainsettexts=[firsttexts[row] for row in train]
-    trainsetoutcomes=[firstoutcomes[row] for row in train]
+    trainsetoutcomes=[problemOutcomes[row] for row in train]
     testsettexts=[firsttexts[row] for row in test]
-    testsetoutcomes=[firstoutcomes[row] for row in test]
+    testsetoutcomes=[problemOutcomes[row] for row in test]
     
-    print len(trainsettexts) , train 
-    print len(trainsetoutcomes), test
+#    print len(trainsettexts) , train 
+#    print len(trainsetoutcomes), test
     
 
     clf = MultinomialNB(alpha=0.1)
