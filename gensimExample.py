@@ -1,6 +1,15 @@
 '''
 Created on Oct 31, 2014
 
+This python module will do topic modeling on a corpus and determine the probabilities
+of those documents fitting into different topics
+
+Variables that can be modified
+inputdirectory - where the file(s) are located to read in and create the corpus
+outputdirectory - where the file(s) are located to output the probabilities for each document
+    in the coprus to the different topics
+numTopics - the number of topics that will be modeled 
+
 @author: croninrm
 '''
 
