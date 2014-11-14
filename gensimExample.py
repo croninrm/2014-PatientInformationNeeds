@@ -21,7 +21,7 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 '''
 These are the input and output directories, check depending on your directory structure
 '''
-inputdirectory = 'C:\\Users\\croninrm\\Documents\\BMI-Fellow-PGY2\\Masters\\Data\\Messages\\ProcessedBetter\\CSV'
+inputdirectory = 'C:\\Users\\croninrm\\Documents\\BMI-Fellow-PGY2\\Masters\\Data\\Messages\\ProcessedBetter\\CSV\\Labelled'
 outputdirectory = 'C:\\Users\\croninrm\\Documents\\BMI-Fellow-PGY2\\Masters\\Data\\Messages\\ProcessedBetter\\Output'
 
 #Number of topics
@@ -35,6 +35,7 @@ import csv
 filetexts = []
 filetextslabeled=[]
 filetexts2 =[]
+documents=[]
 os.chdir(inputdirectory)
 
 '''
@@ -48,24 +49,34 @@ Then I can go through each file, and take each document and see its score...
 
 for subdir, dirs, files in os.walk(inputdirectory):
    for file in files:
-       print file
-file='LABELED_2008_175.csv'
+###
+###  INDENT FROM HERE TO DO ALL THE FILES!!!
+###
+    
+#    file='LABELED_2008_175.csv'
+    print 'processing %s' % (file)
 
-with open(file, 'rb') as csvfile:
-    spamreader = csv.reader(csvfile)
-    filetexts2=[word[3] for word in spamreader]
-     
-with open(file, 'rb') as csvfile:
-    spamreader = csv.reader(csvfile)
-    filetextslabeled=[word for word in spamreader]
+    with open(file, 'rb') as csvfile:
+        spamreader = csv.reader(csvfile)
+        filetexts2=[word[2] for word in spamreader]
+         
+    with open(file, 'rb') as csvfile:
+        spamreader = csv.reader(csvfile)
+        filetextslabeled=[word for word in spamreader]
+    
+    documents.extend(filetexts2)
+
+###
+###  INDENT UP TO HERE
+###
 
 
 os.chdir(outputdirectory)
 
 
-documents=filetexts2
+
 # remove common words and tokenize
-stoplist = set('for a of the and to in i I you my aaabbbccc aaabbbccclicensed or is it on am have me (**place)aaabbbccc would at this detailsaaabbccc. do been can what be just with that was so your will but if had an as -'.split())
+stoplist = set('for a she her we has not of the and to in i I you my aaabbbccc aaabbbccclicensed or is it on am have me (**place)aaabbbccc would at this detailsaaabbccc. do been can what be just with that was so your will but if had an as - message: patient get'.split())
 texts = [[word for word in document.lower().split() if word not in stoplist]
          for document in documents]
 
@@ -148,6 +159,3 @@ with open('CorpusTopics.csv', 'wb') as csvfile:
 
 print "Completed topic modeling"
 sys.exit()
-
-
-
