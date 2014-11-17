@@ -9,6 +9,14 @@ Created on Nov 11, 2014
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
+'''
+These are the input and output directories, check depending on your directory structure
+'''
+inputdirectory = 'C:\\Users\\croninrm\\Documents\\BMI-Fellow-PGY2\\Masters\\Data\\Messages\\ProcessedBetter\\CSV\\Labelled'
+outputdirectory = 'C:\\Users\\croninrm\\Documents\\BMI-Fellow-PGY2\\Masters\\Data\\Messages\\ProcessedBetter\\Output'
+
+
+
 from gensim import corpora, models, similarities
 
 import numpy as np
@@ -39,16 +47,39 @@ import csv
 import sys
 documents = []
 outcomes=[]
-os.chdir('C:\\Users\\croninrm\\Documents\\BMI-Fellow-PGY2\\Masters\\Data\\Messages\\ProcessedBetter\\CSV')
+os.chdir(inputdirectory)
 tdm = textmining.TermDocumentMatrix()
+
+for subdir, dirs, files in os.walk(inputdirectory):
+   for file in files:
+###
+###  INDENT FROM HERE TO DO ALL THE FILES!!!
+###
+    
+    file='LABELED_2008_175.csv'
+    print 'processing %s' % (file)
+
+with open(file, 'rb') as csvfile:
+    spamreader = csv.reader(csvfile)
+    filetexts2=[word[2] for word in spamreader]
+     
+with open(file, 'rb') as csvfile:
+    spamreader = csv.reader(csvfile)
+    filetextslabeled=[word for word in spamreader]
+
+documents.extend(filetexts2)
+
+###
+###  INDENT UP TO HERE
+###
 
 with open('LABELED_2008_175.csv', 'rb') as csvfile:
     spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
     for row in spamreader:
-        documents.append(row[3])
-        outcomes.append(row[4:10])
+        documents.append(row[2])
+        outcomes.append(row[3:9])
         # Add the documents
-        tdm.add_doc(row[3])
+        tdm.add_doc(row[2])
 
 # Write out the matrix to a csv file. Note that setting cutoff=1 means
 # that words which appear in 1 or more documents will be included in
@@ -69,7 +100,7 @@ stoplist = set('for a of the and to in'.split())
 texts = [[word for word in document.lower().split() if word not in stoplist]
          for document in documents]
 
-
+os.chdir(outputdirectory)
 #Create the dictionary from the words in texts, and save it
 dictionary = corpora.Dictionary(texts)
 dictionary.save('robCSVDictionary.dict') # store the dictionary, for future reference
@@ -78,59 +109,65 @@ dictionary.save('robCSVDictionary.dict') # store the dictionary, for future refe
 #Create the corpus and save it
 corpus = [dictionary.doc2bow(text) for text in texts]
 corpora.MmCorpus.serialize('robCSVcorpus.mm', corpus) # store to disk, for later use
+transverseOutcomes=[]
+for i in range(6):
+    transverseOutcomes.append([int(row[i]) for row in outcomes[1:]])
 
-problemOutcomes=[int(row[0]) for row in outcomes[1:]]
-managementOutcomes=[int(row[1]) for row in outcomes[1:]]
-interventionsOutcomes=[int(row[2]) for row in outcomes[1:]]
-testsOutcomes=[int(row[3]) for row in outcomes[1:]]
-logisticsOutcomes=[int(row[4]) for row in outcomes[1:]]
-ackthxOutcomes=[int(row[5]) for row in outcomes[1:]]
+#transverseOutcomes[0]=[int(row[0]) for row in outcomes[1:]]
+#transverseOutcomes[1]=[int(row[1]) for row in outcomes[1:]]
+#transverseOutcomes[2]=[int(row[2]) for row in outcomes[1:]]
+#transverseOutcomes[3]=[int(row[3]) for row in outcomes[1:]]
+#transverseOutcomes[4]=[int(row[4]) for row in outcomes[1:]]
+#transverseOutcomes[5]=[int(row[5]) for row in outcomes[1:]]
 
+#transverseOutcomes = 
 #print problemOutcomes
 firsttexts=[row for row in textsall[1:]]
 
-all_auc = []
-print 'Positive Class:', sum(problemOutcomes)
-cv = StratifiedKFold(problemOutcomes, n_folds=5, shuffle=True)
 
 
 
 
 #def cross_val(self):
 
+for outcome in range(len(outcomes[0])):    
+    print 'Looking at outcome: %s' % outcomes[0][outcome]
+    print 'Positive Class:', sum(transverseOutcomes[outcome])
+    all_auc = []
+    cv = StratifiedKFold(transverseOutcomes[outcome], n_folds=5, shuffle=True)
 
-print '[+] Got CV...'
-for i, (train, test) in enumerate(cv):
-#    print "train = "
-    trainsettexts=[firsttexts[row] for row in train]
-    trainsetoutcomes=[problemOutcomes[row] for row in train]
-    testsettexts=[firsttexts[row] for row in test]
-    testsetoutcomes=[problemOutcomes[row] for row in test]
+    print '[+] Got CV...'
+    for i, (train, test) in enumerate(cv):
+    #    print "train = "
+        trainsettexts=[firsttexts[row] for row in train]
+        trainsetoutcomes=[transverseOutcomes[outcome][row] for row in train]
+        testsettexts=[firsttexts[row] for row in test]
+        testsetoutcomes=[transverseOutcomes[outcome][row] for row in test]
+        
+    #    print len(trainsettexts) , train 
+    #    print len(trainsetoutcomes), test
+        
     
-#    print len(trainsettexts) , train 
-#    print len(trainsetoutcomes), test
+        clf = MultinomialNB(alpha=0.1)
+        probs = clf.fit(trainsettexts, trainsetoutcomes)
+        probas_= probs.predict_proba(testsettexts)
+        fpr, tpr, thresholds = metrics.roc_curve(testsetoutcomes, probas_[:, 1])
     
-
-    clf = MultinomialNB(alpha=0.1)
-    probs = clf.fit(trainsettexts, trainsetoutcomes)
-    probas_= probs.predict_proba(testsettexts)
-    fpr, tpr, thresholds = metrics.roc_curve(testsetoutcomes, probas_[:, 1])
-
-
-
-plt.plot(fpr, tpr)
-#        title = 'plots/%s_%s_%d' % (self.__class__.__name__, self.c.__class__.__name__, self.vumc.args.num_patients)
-title = "Naive Bayes"
-plt.title(title)
-plt.savefig('%s.png' % title)
-roc_auc = metrics.auc(fpr, tpr)
-all_auc.append(roc_auc)
-
-plt.clf()
-
-
-print 'Mean AUC:', np.mean(all_auc), all_auc
-
+    
+    
+    plt.plot(fpr, tpr)
+    #        title = 'plots/%s_%s_%d' % (self.__class__.__name__, self.c.__class__.__name__, self.vumc.args.num_patients)
+    title = "Naive Bayes"
+    plt.title(title)
+    plt.savefig('%s.png' % title)
+    roc_auc = metrics.auc(fpr, tpr)
+    all_auc.append(roc_auc)
+    
+    plt.clf()
+    
+    
+    print 'Mean AUC:', np.mean(all_auc), all_auc
+    print
 
 sys.exit()
 
